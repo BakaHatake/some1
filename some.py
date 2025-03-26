@@ -1,4 +1,6 @@
-import telebot
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+
 import random
 
 token="7610705253:AAGVc7Yy-uhBRAq3IESkbDxh4rdhVzZ6OHo"
