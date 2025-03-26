@@ -1,1 +1,1 @@
-web: python randass.py
+web: python some.py
