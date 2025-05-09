@@ -1,57 +1,44 @@
-import telebot
-import random
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-token="7610705253:AAGVc7Yy-uhBRAq3IESkbDxh4rdhVzZ6OHo"
-bot = telebot.TeleBot(token)  
+import string
 
-games={}
 
-@bot.message_handler(commands=['start'])
-def start_game(message):
-    chat_id = message.chat.id
+def palindrome(text):
+    text = text.lower()
 
-    games[chat_id] = {
-        'secret_number': random.randint(1, 20),
-        'guesses_taken': 0
-    }
-    bot.reply_to(message, "I'm thinking of a number between 1 and 20. Try to guess it!, you have 6 attempts")
+    cleaned = ''
+    for char in text:
+        if char.isalnum() or char in string.punctuation:
+            cleaned += char
 
-@bot.message_handler(func=lambda message:message.chat.id in games)
-def handle_guess(message):
-    chat_id=message.chat.id
-    game=games[chat_id]
-    try:
-        guess=int(message.text)
-        game['guesses_taken'] += 1
-    except ValueError:
-        bot.reply_to(message, "Please enter a valid number.")
-        return
-
-    if guess < game['secret_number']:
-        bot.reply_to(message, f"Your guess is too low. You have {6 - game['guesses_taken']} guesses left.")      
-    elif guess > game['secret_number']:
-        bot.reply_to(message, f"Your guess is too high. You have {6 - game['guesses_taken']} guesses left.")   
-    else:
-        bot.reply_to(message, f"Good job! You guessed my number in {game['guesses_taken']} guesses! \nType 'play again' to start a new game.")
-        del games[chat_id]
-        return
-
-    if game['guesses_taken'] == 6:
-        bot.reply_to(message, f"Game over! The number was {game['secret_number']}.\nType 'play again!' to start a new game.")
-        del games[chat_id]
-
-@bot.message_handler(func=lambda message: message.text.lower()=="play again")
-def play_again(message):
-      chat_id=message.chat.id
-      games[chat_id]={
-            'secret_number':random.randint(1,20),
-            'guesses_taken':0
-      }
-      bot.reply_to(message,"Alrught! I'm thinking of a number between 1 and 20. Try to guess it!, you have 6 attempts")
+    reversed_text = cleaned[::-1]
     
+    return cleaned == reversed_text, reversed_text
 
-@bot.message_handler(func=lambda message: message.chat.id not in games)
-def no_game_active(message):
-    bot.reply_to(message,"type /start to start a new game")
 
-bot.polling()
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Welcome! Please send me a word or sentence, and I'll check if it's a palindrome.")
+
+
+async def check_palindrome(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    result, reversed_text = palindrome(text)
+
+    if result:
+        await update.message.reply_text(f"{reversed_text} matches {text} \n✅ It's a palindrome!")
+    else:
+        await update.message.reply_text(f"{reversed_text} does not match {text} \n❌ Not a palindrome.")
+
+def main():
+    bot_token = "7592457873:AAEFFNDOVQWcRZ6bJQCisjSNkoGauHRXUAE"  
+    app = Application.builder().token(bot_token).build()
+
+   
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, check_palindrome))
+
+    app.run_polling()
+
+if __name__ == '__main__':
+    main()
